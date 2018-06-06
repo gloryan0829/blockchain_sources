@@ -519,7 +519,7 @@ contract PausableToken is StandardToken, Pausable {
 contract MyToken is StandardBurnableToken, CappedToken, PausableToken {
 
   string public constant name = "MyToken"; // solium-disable-line uppercase
-  string public constant symbol = "MTK"; // solium-disable-line uppercase
+  string public constant symbol = "PET"; // solium-disable-line uppercase
   uint8 public constant decimals = 18; // solium-disable-line uppercase
 
   uint256 public constant INITIAL_SUPPLY = 1e10 * (10 ** uint256(decimals));
