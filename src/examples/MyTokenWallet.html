@@ -86,7 +86,7 @@
 		<select id="selectorTransferFromToCrowdsale">
 		</select>
 		<input type="string" id="crowdsale_value"></input>
-		<select id="transfer_from_wei_unit">
+		<select id="eth_transfer_unit">
 			<option value="1"> WEI </option>
 			<option value="1000"> 10^3 WEI </option>
 			<option value="1000000"> 10^6 WEI </option>
@@ -348,7 +348,7 @@
 							myToken = web3js.eth.contract(MyTokenABI).at("0x345ca3e014aaf5dca488057592ee47305d9b3e10");
 							console.log(accounts)
 
-							accounts[10] = "0xf25186b5081ff5ce73482ad761db0eb0d25abfbf";
+							accounts[10] = "0xeec918d74c746167564401103096d45bbd494b74";
 							var len= (accounts.length > accountNames.length) ? accountNames.length : accounts.length;
 						    for (var i = 0; i < len; i++) {
 							    var option = document.createElement("option");
@@ -402,39 +402,61 @@
 
 
 		function crowdsale_exec() {
-			var crowdsale_to = document.getElementById("current_account").innerHTML;
-			var crowdsale_value = document.getElementById("crowdsale_value").value * document.getElementById("transfer_from_wei_unit").value;
+			var crowdsale_buyer = document.getElementById("current_account").innerHTML;
+			var crowdsale_value = BigNumber(document.getElementById("crowdsale_value").value);
+			console.log(document.getElementById("eth_transfer_unit"));
+
+			if (crowdsale_value.isLessThan(0)) {
+				writeLog(accounts[10] + " 에게 ETH 전송 : 0 이상의 값을 입력해주세요.");
+				return;
+			}
+
+			crowdsale_value = crowdsale_value.multipliedBy(document.getElementById("eth_transfer_unit").value);
 
 			console.log({
-				from: crowdsale_to, 
+				from: crowdsale_buyer, 
 				to: accounts[10], 
-				value: crowdsale_value, 
-				gasPrice: 300000
+				value: crowdsale_value.toFixed()
 			});
 			web3js.eth.call({
-				from: crowdsale_to, 
+				from: crowdsale_buyer, 
 				to: accounts[10], 
-				value: crowdsale_value, 
-				gasPrice: 300000
+				value: crowdsale_value.toFixed()
 			}, function(error, result) {
 					console.log(result);
 					console.log(error);
-					// if (errorChk("call 호출 실패", error)) return;
-					// if (result) {
-					// 	web3js.eth.sendTransaction(
-					// 		{ 
-					// 			from : "0x627306090abab3a6e1400e9345bc60c78a8bef57", 
-					// 			to : crowdsale_from,
-					// 			value : crowdsale_value,
-					// 			gasPrice:BigNumber(document.getElementById("gas_price").value).multipliedBy(1000000000)
-					// 		}, 
-					// 		function(error, result) {
-					// 			if (errorChk("callTransferFrom(transaction) 호출 실패", error)) return;
-					// 			writeLog(accountNames[from] + " 의 PET 를 " + accountNames[to] + " 에게 전송 : (return data) " + result);
-					// 		}
-					// 	);
-					// }
+
+					web3js.eth.sendTransaction(
+						{
+							from: crowdsale_buyer, 
+							to: accounts[10], 
+							value: crowdsale_value.toFixed(), 
+							gasPrice: BigNumber(document.getElementById("gas_price").value).multipliedBy(1000000000)
+						},
+							function(error, result) {
+								if (errorChk("이더 transfer(transaction) 호출 실패", error)) return;
+								writeLog(accounts[10] + " 에게 ETH 전송 : (return data) " + result);
+						}
+					);
 			});	
+
+				// web3js.eth.call({from:accounts[currentAccount], to:accounts[i], value: transferValue.toFixed()}, function(error, result) {
+				// 	if (errorChk("이더 transfer(call) 호출 실패", error)) return;
+				// 	if (result) {
+				// 		web3js.eth.sendTransaction(
+				// 			{
+				// 				from:accounts[currentAccount], 
+				// 				to:accounts[i], 
+				// 				value: transferValue.toFixed(), 
+				// 				gasPrice:BigNumber(document.getElementById("gas_price").value).multipliedBy(1000000000)
+				// 			},
+				// 			function(error, result) {
+				// 				if (errorChk("이더 transfer(transaction) 호출 실패", error)) return;
+				// 				writeLog(accountNames[i] + " 에게 ETH 전송 : (return data) " + result);
+				// 			}
+				// 		);
+				// 	}
+				// });
 		}
 
 		function writeLog(msg, i) {
