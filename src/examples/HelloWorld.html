@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head><meta charset="UTF-8">
+<title>HelloWorld</title>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
+<script type="text/javascript" src="./js/bignumber.min.js"></script>
+<script type="text/javascript" src="./js/crypto-js.js"></script>
+<script type="text/javascript" src="./js/utf8.js"></script>
+<script type="text/javascript" src="./js/web3.min.js"></script>
+<script>
+    // 연결할JSON-RPC서버(가상 머신)의 IP 주소 및 포트 번호
+    var url = "http://192.168.35.13:8545"
+    var contractAddress = "0x42551315671204a12833b32fbd598a05cbfb52e9"
+    var user_name;
+    var web3 = new Web3();
+    var provider = new web3.providers.HttpProvider(url)
+    web3.setProvider(provider);
+    web3.eth.defaultAccount = web3.eth.accounts[0];
+    var ABI = [
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "say",
+		"outputs": [
+			{
+				"name": "",
+				"type": "string"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "greeting",
+		"outputs": [
+			{
+				"name": "",
+				"type": "string"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_greeting",
+				"type": "string"
+			}
+		],
+		"name": "setGreeting",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"name": "_greeting",
+				"type": "string"
+			}
+		],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	}
+];
+    var helloWorldContract = web3.eth.contract(ABI).at(contractAddress);
+    
+    // 로그인(Unlock)
+    function login() {
+        user_name = $("#userName").val();
+        var password = $("#password").val();
+        var JSONdata = createJSONdata("personal_unlockAccount", [ user_name, password, 30 ]);
+        executeJsonRpc(url, JSONdata, function success(data) {
+        // 로그인 성공
+        if (data.error == null) {
+        console.log("login success!");
+        } else {
+        // 로그인 실패
+        console.log("login error");
+        }
+        init();
+        }, function error(data) {
+        // 로그인 실패
+        console.log("login error");
+        });
+    }
+
+    // 초기화
+    function init() {
+        web3.eth.defaultAccount = user_name;
+        $("#greeting").val(helloWorldContract.say());
+    }
+
+    // 업데이트
+    function refresh() {
+        web3.eth.defaultAccount = user_name;
+        $("#greeting").val(helloWorldContract.say());
+    }
+    //카운트 증가
+    function update() {
+        web3.eth.defaultAccount = user_name;
+        helloWorldContract.setGreeting($("#greeting").val());
+    }
+
+    // JSON 메시지 생성
+    function createJSONdata(method, params) {
+        var JSONdata = {
+        "jsonrpc" : "2.0",
+        "method" : method,
+        "params" : params
+        };
+        return JSONdata;
+    }
+
+    // JSON-RPC 실행
+    function executeJsonRpc(url_exec, JSONdata, success, error) {
+        $.ajax({
+            type : 'post',
+            url : url_exec,
+            data : JSON.stringify(JSONdata),
+            contentType : 'application/JSON',
+            dataType : 'JSON',
+            scriptCharset : 'utf-8',
+            success : function(data) {
+                success(data);
+            },
+            error : function(data) {
+                error(data);
+            }
+        });
+    }
+</script>
+</head>
+<body>
+    <p>
+        사용자명:&nbsp;<input type="text" id="userName" value="0x4d66bfb5054cd02d8b9be9d58ad50843980eda2c">&nbsp;
+        패스워드:&nbsp;<input type="text" id="password" value="pass0">&nbsp; <input type="button" value="login" onclick="login();" />
+    </p>
+    <table id="list" border="1">
+        <tr>
+            <th>Greeting</th>
+        </tr>
+        <tr>
+            <td><input type="text" id="greeting"></td>
+        </tr>
+    </table>
+
+    <br />
+    <input type="button" value="update" onclick="update();" />
+    <br />
+    <input type="button" value="refresh" onclick="refresh();" />
+</body>
+</html>

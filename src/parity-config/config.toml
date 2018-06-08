@@ -1,0 +1,43 @@
+[parity]
+# parity_private.json 가 위치한 경로로 변경하여 사용해주세요.
+chain = "/Users/DoubleJ/DevWorkspace/blockchain_sources/src/parity-config/parity_private.json"
+
+[account]
+# account new 로 주소를 새로 만들어서 변경하여 사용해주세요.
+unlock = ["0x41300a4e9e2a6aae92e85dddf933f353ade82e43"
+"0xf9c8abe65d757a9160da5b506c2badc946ec129d",
+"0x6b2f8697bc4c7c21d5a5d538f30db65950c7d63c",
+"0x8100cd6de9df01724e32b5a2f8c2dca2f77c599b",
+"0xb760b0ee0f6aa7c2344290a3c6f9d2b88702b8ef",
+"0x7a8a1c632358bc483a48418a89b2c8727491e545",
+"0xf812b499a2093364dfbb57c6eb6edb087bdef035",
+"0x725139ba079ded68810ec032c27d9e5e228281d8",
+"0xcecf025aebc5c52fd07e9f1db17376e0c1a4c281",
+"0x6c997b5456f2fa1b80bcace7262493500751f426"]
+# 비밀번호 파일 경로를 지정해주세요.
+password = ["/Users/DoubleJ/DevWorkspace/blockchain_sources/src/parity-config/password.file",
+"/Users/DoubleJ/DevWorkspace/blockchain_sources/src/parity-config/password.file",
+"/Users/DoubleJ/DevWorkspace/blockchain_sources/src/parity-config/password.file",
+"/Users/DoubleJ/DevWorkspace/blockchain_sources/src/parity-config/password.file",
+"/Users/DoubleJ/DevWorkspace/blockchain_sources/src/parity-config/password.file",
+"/Users/DoubleJ/DevWorkspace/blockchain_sources/src/parity-config/password.file",
+"/Users/DoubleJ/DevWorkspace/blockchain_sources/src/parity-config/password.file",
+"/Users/DoubleJ/DevWorkspace/blockchain_sources/src/parity-config/password.file",
+"/Users/DoubleJ/DevWorkspace/blockchain_sources/src/parity-config/password.file",
+"/Users/DoubleJ/DevWorkspace/blockchain_sources/src/parity-config/password.file"]
+keys_iterations = 10240
+
+[rpc]
+# 8555 포트로 설정합니다.
+port = 8555
+# 모든 도메인에서 연결할 수 있도록 설정합니다.
+cors = ["all"]
+# 어떤 기능을 오픈할지를 설정합니다. 예를 들어 계정을 조작하는 personal api 를 오픈하려면 아랫줄을 사용하세요.
+apis = ["web3", "eth", "pubsub", "net", "parity", "parity_pubsub", "traces", "rpc", "shh", "shh_pubsub"]
+# apis = ["web3", "eth", "pubsub", "net", "parity", "parity_pubsub", "traces", "rpc", "shh", "shh_pubsub", "personal"]
+
+[mining]
+# 0.001초의 채굴 스피드
+reseal_min_period = 1
+# 가스비 없어도 OK
+min_gas_price = 0
