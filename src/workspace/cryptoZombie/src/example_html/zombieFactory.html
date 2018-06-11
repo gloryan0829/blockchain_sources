@@ -7,320 +7,70 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/bignumber.js/bignumber.min.js"></script>
     <title>좀비 팩토리 예제</title>
     <script type="text/javascript">
-
-        var baseBlock, petToken, accounts, currentAccount, logs = [];
-
-        var selectorTransferFromToCrowdsale = $("#selectorTransferFromToCrowdsale");
-
-        var accountNames= ['이정주', '손영득', '이재훈', '양정석', '이종민', '최성호', '현수환', '조윤형', '조용환', '정재호', '크라우드 세일 컨트랙트 계정', '민트 크라우드 세일 계정'];
-
-        const PETTokenAddr = "0x345ca3e014aaf5dca488057592ee47305d9b3e10"; // PetToken 스마트 컨트랙트
-        const CrowdSaleAddr = "0xeec918d74c746167564401103096d45bbd494b74";// CrowdSale 컨트랙트 주소
-        const MintedCrowdSaleAddr = "0xcfed223fab2a41b5a5a5f9aaae2d1e882cb6fe2d";// MintedCrowdSale 컨트랙트 주소
-        const PETTokenABI = [{"constant":true,"inputs":[],"name":"mintingFinished","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"name","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_from","type":"address"},{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transferFrom","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"INITIAL_SUPPLY","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"cap","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"unpause","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_amount","type":"uint256"}],"name":"mint","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_value","type":"uint256"}],"name":"burn","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"paused","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_subtractedValue","type":"uint256"}],"name":"decreaseApproval","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"balance","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"renounceOwnership","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_from","type":"address"},{"name":"_value","type":"uint256"}],"name":"burnFrom","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[],"name":"finishMinting","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[],"name":"pause","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transfer","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"CAPPED_SUPPLY","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_addedValue","type":"uint256"}],"name":"increaseApproval","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"},{"name":"_spender","type":"address"}],"name":"allowance","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[],"name":"Pause","type":"event"},{"anonymous":false,"inputs":[],"name":"Unpause","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"amount","type":"uint256"}],"name":"Mint","type":"event"},{"anonymous":false,"inputs":[],"name":"MintFinished","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"previousOwner","type":"address"}],"name":"OwnershipRenounced","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"previousOwner","type":"address"},{"indexed":true,"name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"burner","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Burn","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"owner","type":"address"},{"indexed":true,"name":"spender","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Transfer","type":"event"}];
+        logs = "";
+        web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:9545"));
+        let abi = [{"constant":true,"inputs":[{"name":"","type":"uint256"}],"name":"zombies","outputs":[{"name":"name","type":"string"},{"name":"dna","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"string"}],"name":"createRandomZombie","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"zombieId","type":"uint256"},{"indexed":false,"name":"name","type":"string"},{"indexed":false,"name":"dna","type":"uint256"}],"name":"NewZombie","type":"event"}];
+        let ZombieFactoryContract = web3.eth.contract(abi);
+        const contractAddress = "0xf12b5dd4ead5f743c6baa640b0216200e89b60da";
+        const senderAddress = "0x627306090abab3a6e1400e9345bc60c78a8bef57";
+        ZombieFactory = ZombieFactoryContract.at(contractAddress);
 
         $(document).ready(function(){
+            $("#buttonClick").click(function(e){
+                console.log(ZombieFactory);
+                let name = $("#nameInput").val();
+           
+                if(!name) alert("이름을 입력하세요!");
+                ZombieFactory.createRandomZombie.sendTransaction(
+                    name,
+                    {
+                        from: senderAddress
+                    },
+                    function(error, result) {
+                        if (errorChk("createRandomZombie 호출 실패", error)) return;
+                    }
+                );
+            });
 
+            watchStart();
         });
 
-        // Currency Unit 에 대한 option 생성 함수
-        function currencyOptionDraw() {
+        function generateZombie(id, name, dna){
+            let dnaStr = String(dna);
 
-            for( var i = 0; i <= 6; i++ ){
-                $(".currencyUnitSelector").append(function(){
-                    return	$('<option>', {
-                        value : 1 * Math.pow(10,i*3),
-                        text : i == 0? $(this).attr("name") :"10^" + (i*3) + " " + $(".currencyUnitSelector")[0].name
-                    });
-                });
+            while(dnaStr.length < 16)
+            dnaStr = "0" + dnaStr
+            
+            let zombieDetails = {
+                headChoice: dnaStr.substring(0, 2) % 7 + 1,
+                eyeChoice: dnaStr.substring(2, 4) % 11 + 1,
+                shirtChoice: dnaStr.substring(4, 6) % 6 + 1,
+                skinColorChoice: parseInt(dnaStr.substring(6, 8) / 100 * 360),
+                eyeColorChoice: parseInt(dnaStr.substring(8, 10) / 100 * 360),
+                clothesColorChoice: parseInt(dnaStr.substring(10, 12) / 100 * 360),
+                zombieName: name,
+                zombieDescription: "Level 1 크립토 좀비"
             }
-        }
-
-        // 토큰 보유에 대한 call
-        function balanceOf(account, targetEl) {
-            petToken.balanceOf(account, function(error, result) {
-                if (errorChk("balanceOf 호출 실패", error)) return;
-
-                var myBalance = result;
-                petToken.symbol(function(error, result) {
-                    var mySymbol = result;
-                    $("#"+targetEl).text(myBalance.toFixed() + " " + mySymbol);
-                });
-            });
-        }
-
-        function changeCrowdSaleOwner() {
-            var selectAccountIdx = $('#cwrodSaleParticipent').val();
-            balanceOf(accounts[selectAccountIdx], "tokenRemaining");
-        }
-
-        // Account 이더, 토큰 보유량에 대한 call
-        function accountRefresh() {
-            if (accounts == null) return;
-
-            currentAccount = $('#sel_names').val();
-            if (currentAccount < accounts.length) {
-                $("#current_account").text(accounts[currentAccount]);
-                balanceOf(accounts[currentAccount], "current_balance")
-
-                web3js.eth.getBalance(accounts[currentAccount], function(error, result) {
-                    if (errorChk("getBalance 호출 실패", error)) return;
-
-                    var myEther = BigNumber(result);
-                    if (myEther.isLessThan(1000000000000000))
-                        var etherMessage = " (경고 : 이더 부족으로 실행하지 못할 수도 있습니다.)"
-                    else
-                        etherMessage = "";
-                    document.getElementById("current_ether").textContent = myEther.toFixed() + " wei" + etherMessage;
-                });
-
-                document.getElementById("result").textContent = logs[currentAccount];
-
-                transferFromRefresh();
-                changeCrowdSaleOwner();
-            } else {
-                document.getElementById("current_account").textContent = "계정 number 초과 ERROR : " + accounts.length + " 번째 이하의 계정을 골라주세요.";
-            }
-        }
-
-        function transferFromRefresh() {
-            fromAccount = document.getElementById('sel_transfer_from_names').value;
-
-            petToken.allowance(accounts[fromAccount], accounts[currentAccount], function(error, result) {
-                if (errorChk("allowance 호출 실패", error)) return;
-                document.getElementById("approval_value").textContent = result.toFixed();
-            });
-        }
-
-        function callTransfer() {
-            var i = document.getElementById('sel_transfer_to_names').value;
-            if (i < accounts.length) {
-                if (i == currentAccount) {
-                    writeLog(accountNames[i] + " 에게 PET 전송 : 본인에게 전송하는 것은 의미가 없습니다.");
-                    return;
-                }
-
-                var transferValue = BigNumber(document.getElementById("transfer_value").value);
-                if (transferValue.isLessThan(0)) {
-                    writeLog(accountNames[i] + " 에게 PET 전송 : 0 이상의 값을 입력해주세요.");
-                    return;
-                }
-
-                transferValue = transferValue.multipliedBy(document.getElementById("transfer_unit").value);
-                petToken.transfer.call(accounts[i], transferValue.toFixed(), {from:accounts[currentAccount]}, function(error, result) {
-                    if (errorChk("transfer(call) 호출 실패", error)) return;
-                    if (result) {
-                        petToken.transfer.sendTransaction(
-                            accounts[i],
-                            transferValue.toFixed(),
-                            {
-                                from:accounts[currentAccount],
-                                gasPrice:BigNumber($("#gas_price").val()).multipliedBy(1000000000)
-                            },
-                            function(error, result) {
-                                if (errorChk("transfer(transaction) 호출 실패", error)) return;
-                                writeLog(accountNames[i] + " 에게 PET 전송 : (return data) " + result);
-                            }
-                        );
-                    }
-                });
-            } else {
-                writeLog(accountNames[i] + " 에게 PET 전송 : 계정 number 초과 ERROR! " + accounts.length + " 번째 이하의 계정을 골라주세요.");
-            }
-        }
-
-        function callApprove() {
-            var i = $('#sel_approve_to_names option:selected').val();
-            if (i < accounts.length) {
-                if (i == currentAccount) {
-                    writeLog(accountNames[i] + " 에게 PET 권한 주기 : 본인에게 권한을 주는 것은 의미가 없습니다.");
-                    return;
-                }
-
-                var approveValue = BigNumber(document.getElementById("approve_value").value);
-                if (approveValue.isLessThan(0)) {
-                    writeLog(accountNames[i] + " 에게 PET 권한 주기 : 0 이상의 값을 입력해주세요.");
-                    return;
-                }
-
-                approveValue = approveValue.multipliedBy($("#approve_unit option:selected").val());
-                petToken.approve.call(accounts[i], approveValue.toFixed(), {from:accounts[currentAccount]}, function(error, result) {
-                    if (errorChk("approve(call) 호출 실패", error)) return;
-                    if (result) {
-                        petToken.approve.sendTransaction(
-                            accounts[i],
-                            approveValue.toFixed(),
-                            {
-                                from:accounts[currentAccount],
-                                gasPrice:BigNumber(document.getElementById("gas_price").value).multipliedBy(1000000000)
-                            },
-                            function(error, result) {
-                                if (errorChk("approve(transaction) 호출 실패", error)) return;
-                                writeLog(accountNames[i] + " 에게 PET 권한 주기 : (return data) " + result);
-                            }
-                        );
-                    }
-                });
-            } else {
-                writeLog(accountNames[i] + " 에게 PET 권한 주기 : 계정 number 초과 ERROR! " + accounts.length + " 번째 이하의 계정을 골라주세요.");
-            }
-        }
-
-        function callTransferFrom() {
-            var from = document.getElementById('sel_transfer_from_names').value;
-            var to = document.getElementById('sel_transfer_from_to_names').value;
-            if (from < accounts.length) {
-                if (from == to) {
-                    writeLog(accountNames[from] + " 의 PET 를 " + accountNames[to] + " 에게 전송 : 본인에게 전송하는 것은 의미가 없습니다.");
-                    return;
-                }
-
-                var transferValue = BigNumber(document.getElementById("transfer_from_value").value);
-                if (transferValue.isLessThan(0)) {
-                    writeLog(accountNames[from] + " 의 PET 를 " + accountNames[to] + " 에게 전송 : 0 이상의 값을 입력해주세요.");
-                    return;
-                }
-
-                if (transferValue.isGreaterThan(document.getElementById("approval_value").textContent)) {
-                    writeLog(accountNames[from] + " 의 PET 를 " + accountNames[to] + " 에게 전송 : 권한 내의 값을 입력해주세요.");
-                    return;
-                }
-
-                transferValue = transferValue.multipliedBy(document.getElementById("transfer_from_unit").value);
-                petToken.transferFrom.call(accounts[from], accounts[to], transferValue.toFixed(), {from:accounts[currentAccount]}, function(error, result) {
-                    if (errorChk("callTransferFrom(call) 호출 실패", error)) return;
-                    if (result) {
-                        petToken.transferFrom.sendTransaction(
-                            accounts[from],
-                            accounts[to],
-                            transferValue.toFixed(),
-                            {
-                                from:accounts[currentAccount],
-                                gasPrice:BigNumber(document.getElementById("gas_price").value).multipliedBy(1000000000)
-                            },
-                            function(error, result) {
-                                if (errorChk("callTransferFrom(transaction) 호출 실패", error)) return;
-                                writeLog(accountNames[from] + " 의 PET 를 " + accountNames[to] + " 에게 전송 : (return data) " + result);
-                            }
-                        );
-                    }
-                });
-            }
-        }
-
-        function crowdsale_exec(gubun) {
-            var crowdsale_buyer = document.getElementById("current_account").innerHTML;
-            var crowdsale_value = BigNumber(document.getElementById("crowdsale_value").value);
-
-            if (crowdsale_value.isLessThan(0)) {
-                writeLog(accounts[10] + " 에게 ETH 전송 : 0 이상의 값을 입력해주세요.");
-                return;
-            }
-
-            crowdsale_value = crowdsale_value.multipliedBy($("#eth_transfer_unit").val());
-
-            web3js.eth.call({
-                from: crowdsale_buyer,
-                to: accounts[10],
-                value: crowdsale_value.toFixed()
-            }, function(error, result) {
-                console.log(result);
-                console.log(error);
-
-                web3js.eth.sendTransaction(
-                    {
-                        from: crowdsale_buyer,
-                        to: accounts[10],
-                        value: crowdsale_value.toFixed(),
-                        gasPrice: BigNumber(document.getElementById("gas_price").value).multipliedBy(1000000000)
-                    },
-                    function(error, result) {
-                        if (errorChk("이더 transfer(transaction) 호출 실패", error)) return;
-                        writeLog(accounts[10] + " 에게 ETH 전송 : (return data) " + result);
-                    }
-                );
-            });
-        }
-
-        function MintedCrowdsale_exec() {
-            var mintedCrowdsale_buyer = document.getElementById("current_account").innerHTML;
-            var mintedCrowdsale_value = BigNumber(document.getElementById("mintedCrowdsale_value").value);
-
-            mintedCrowdsale_value = mintedCrowdsale_value.multipliedBy($("#eth_transfer_unit2").val());
-
-            web3js.eth.call({
-                from: mintedCrowdsale_buyer,
-                to: accounts[11],
-                value: mintedCrowdsale_value.toFixed()
-            }, function(error, result) {
-
-                web3js.eth.sendTransaction(
-                    {
-                        from: mintedCrowdsale_buyer,
-                        to: accounts[11],
-                        value: mintedCrowdsale_value.toFixed(),
-                        gasPrice: BigNumber(document.getElementById("gas_price").value).multipliedBy(1000000000)
-                    },
-                    function(error, result) {
-                        if (errorChk("이더 transfer(transaction) 호출 실패", error)) return;
-                        writeLog(accounts[10] + " 에게 ETH 전송 : (return data) " + result);
-                    }
-                );
-            });
+            return zombieDetails;
         }
 
         // Transaction에 의한 Event에 대한 Watch 부분
         function watchStart() {
-            var eventTransfer = petToken.Transfer(null, {fromBlock:baseBlock});
-            eventTransfer.watch(function(error, result) {
-                if (result.blockNumber == baseBlock || errorChk("Transfer 이벤트 Watch 실패", error)) return;
-
-                for (var i = 0; i < accounts.length; i++) {
-                    if (result.args.from == accounts[i])
-                        var whoFrom = i;
-                    if (result.args.to == accounts[i])
-                        var whoTo = i;
-                }
-                console.log(result);
-                writeLog(accountNames[whoTo] + " 에게 " + BigNumber(result.args.value).toFixed() + " PET 전송 완료", whoFrom);
-                writeLog(accountNames[whoFrom] + " 으로부터 " + BigNumber(result.args.value).toFixed() + " PET 전송 받음", whoTo);
-
-                if (whoFrom == currentAccount || whoTo == currentAccount)
-                    accountRefresh();
-            });
-
-
-            var eventApprove = petToken.Approval(null, {fromBlock:baseBlock});
-            eventApprove.watch(function(error, result) {
-                if (result.blockNumber == baseBlock || errorChk("Approval 이벤트 Watch 실패", error)) return;
-                console.log(result);
-                for (var i = 0; i < accounts.length; i++) {
-                    if (result.args.owner == accounts[i])
-                        var whoFrom = i;
-                    if (result.args.spender == accounts[i])
-                        var whoTo = i;
-                }
-
-
-
-                writeLog(accountNames[whoTo] + " 에게 " + BigNumber(result.args.value).toFixed() + " PET 권한 주기 완료", whoFrom);
-                writeLog(accountNames[whoFrom] + " 으로부터 " + BigNumber(result.args.value).toFixed() + " PET 전송 권한 받음", whoTo);
-
-                if (whoFrom == currentAccount || whoTo == currentAccount)
-                    accountRefresh();
+            var event = ZombieFactory.NewZombie(null, {fromBlock:0});
+            event.watch(function(error, result){
+                if (error) return;
+                console.log(BigNumber(result.args.zombieId).toFixed());
+                let zombieDetails = generateZombie(BigNumber(result.args.zombieId).toFixed(), result.args.name, BigNumber(result.args.dna).toFixed());
+                console.log(zombieDetails);
+                writeLog("좀비 머리 : " + zombieDetails.headChoice + " / 좀비 눈 : " + zombieDetails.eyeChoice + 
+                         " / 좀비 옷 : " + zombieDetails.shirtChoice + " more... ");
             });
         }
 
-        function writeLog(msg, i) {
-            if (i === undefined)
-                i = currentAccount;
-            if (logs[i] === undefined)
-                logs[i] = "";
+        function writeLog(msg) {
+            logs = logs + "[" + new Date().toLocaleString() + "] " + msg + "\r\n";
 
-            logs[i] = logs[i] + "[" + new Date().toLocaleString() + "] " + msg + "\n";
-
-            if (i == currentAccount)
-                document.getElementById("result").textContent = logs[i];
+            document.getElementById("result").textContent = logs;
         }
 
         function errorChk(msg, error) {
@@ -336,6 +86,8 @@
 </head>
 
 <body>
-
+    <input type="text" id="nameInput" />
+    <button id="buttonClick" title="좀비생성">좀비생성</button><br/>
+    result : <div id="result" style="white-space: pre-wrap;"></div>
 </body>
 </html>

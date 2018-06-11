@@ -359,8 +359,6 @@
 					if (result.args.spender == accounts[i])
 						var whoTo = i;
 				}
-
-
 				
 				writeLog(accountNames[whoTo] + " 에게 " + BigNumber(result.args.value).toFixed() + " PET 권한 주기 완료", whoFrom);
 				writeLog(accountNames[whoFrom] + " 으로부터 " + BigNumber(result.args.value).toFixed() + " PET 전송 권한 받음", whoTo);
