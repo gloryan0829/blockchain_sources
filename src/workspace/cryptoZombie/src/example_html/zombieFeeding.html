@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/bignumber.js/bignumber.min.js"></script>
+    <title>좀비 팩토리 예제</title>
+    <script type="text/javascript">
+        logs = "";
+        web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:9545"));
+        let abi = [{"constant":true,"inputs":[{"name":"","type":"uint256"}],"name":"zombies","outputs":[{"name":"name","type":"string"},{"name":"dna","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"string"}],"name":"createRandomZombie","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"zombieId","type":"uint256"},{"indexed":false,"name":"name","type":"string"},{"indexed":false,"name":"dna","type":"uint256"}],"name":"NewZombie","type":"event"}];
+        let ZombieFactoryContract = web3.eth.contract(abi);
+        const contractAddress = "0xf12b5dd4ead5f743c6baa640b0216200e89b60da";
+        const senderAddress = "0x627306090abab3a6e1400e9345bc60c78a8bef57";
+        ZombieFactory = ZombieFactoryContract.at(contractAddress);
+
+        $(document).ready(function(){
+            $("#buttonClick").click(function(e){
+                console.log(ZombieFactory);
+                let name = $("#nameInput").val();
+           
+                if(!name) alert("이름을 입력하세요!");
+                ZombieFactory.createRandomZombie.sendTransaction(
+                    name,
+                    {
+                        from: senderAddress
+                    },
+                    function(error, result) {
+                        if (errorChk("createRandomZombie 호출 실패", error)) return;
+                    }
+                );
+            });
+
+            watchStart();
+        });
+
+        function generateZombie(id, name, dna){
+            let dnaStr = String(dna);
+
+            while(dnaStr.length < 16)
+            dnaStr = "0" + dnaStr
+            
+            let zombieDetails = {
+                headChoice: dnaStr.substring(0, 2) % 7 + 1,
+                eyeChoice: dnaStr.substring(2, 4) % 11 + 1,
+                shirtChoice: dnaStr.substring(4, 6) % 6 + 1,
+                skinColorChoice: parseInt(dnaStr.substring(6, 8) / 100 * 360),
+                eyeColorChoice: parseInt(dnaStr.substring(8, 10) / 100 * 360),
+                clothesColorChoice: parseInt(dnaStr.substring(10, 12) / 100 * 360),
+                zombieName: name,
+                zombieDescription: "Level 1 크립토 좀비"
+            }
+            return zombieDetails;
+        }
+
+        // Transaction에 의한 Event에 대한 Watch 부분
+        function watchStart() {
+            var event = ZombieFactory.NewZombie(null, {fromBlock:0});
+            event.watch(function(error, result){
+                if (error) return;
+                console.log(BigNumber(result.args.zombieId).toFixed());
+                let zombieDetails = generateZombie(BigNumber(result.args.zombieId).toFixed(), result.args.name, BigNumber(result.args.dna).toFixed());
+                console.log(zombieDetails);
+                writeLog("좀비 머리 : " + zombieDetails.headChoice + " / 좀비 눈 : " + zombieDetails.eyeChoice + 
+                         " / 좀비 옷 : " + zombieDetails.shirtChoice + " more... ");
+            });
+        }
+
+        function writeLog(msg) {
+            logs = logs + "[" + new Date().toLocaleString() + "] " + msg + "\r\n";
+
+            document.getElementById("result").textContent = logs;
+        }
+
+        function errorChk(msg, error) {
+            if (error != null) {
+                writeLog(msg + " : " + error.toString());
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+    </script>
+</head>
+
+<body>
+    <input type="text" id="nameInput" />
+    <button id="buttonClick" title="좀비생성">좀비생성</button><br/>
+    result : <div id="result" style="white-space: pre-wrap;"></div>
+</body>
+</html>
