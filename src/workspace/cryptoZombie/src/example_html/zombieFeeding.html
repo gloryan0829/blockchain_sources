@@ -7,21 +7,22 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/bignumber.js/bignumber.min.js"></script>
     <title>좀비 팩토리 예제</title>
     <script type="text/javascript">
+        
         logs = "";
+        
         web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:9545"));
-        let abi = [{"constant":true,"inputs":[{"name":"","type":"uint256"}],"name":"zombies","outputs":[{"name":"name","type":"string"},{"name":"dna","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"string"}],"name":"createRandomZombie","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"zombieId","type":"uint256"},{"indexed":false,"name":"name","type":"string"},{"indexed":false,"name":"dna","type":"uint256"}],"name":"NewZombie","type":"event"}];
-        let ZombieFactoryContract = web3.eth.contract(abi);
-        const contractAddress = "0xf12b5dd4ead5f743c6baa640b0216200e89b60da";
+        let abi = [{"constant":false,"inputs":[{"name":"_zombieId","type":"uint256"},{"name":"_kittyId","type":"uint256"}],"name":"feedOnKitty","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"","type":"uint256"}],"name":"zombies","outputs":[{"name":"name","type":"string"},{"name":"dna","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"","type":"uint256"}],"name":"zombieToOwner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_zombieId","type":"uint256"},{"name":"_targetDna","type":"uint256"},{"name":"_species","type":"string"}],"name":"feedAndMultiply","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_name","type":"string"}],"name":"createRandomZombie","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"zombieId","type":"uint256"},{"indexed":false,"name":"name","type":"string"},{"indexed":false,"name":"dna","type":"uint256"}],"name":"NewZombie","type":"event"}];
+        let ZombieFeedingContract = web3.eth.contract(abi);
+        const contractAddress = "0x2e335f247e91caa168c64b63104c4475b2af3942";
         const senderAddress = "0x627306090abab3a6e1400e9345bc60c78a8bef57";
-        ZombieFactory = ZombieFactoryContract.at(contractAddress);
+        ZombieFeeding = ZombieFeedingContract.at(contractAddress);
 
         $(document).ready(function(){
             $("#buttonClick").click(function(e){
-                console.log(ZombieFactory);
+                console.log(ZombieFeeding);
                 let name = $("#nameInput").val();
-           
                 if(!name) alert("이름을 입력하세요!");
-                ZombieFactory.createRandomZombie.sendTransaction(
+                ZombieFeeding.createRandomZombie.sendTransaction(
                     name,
                     {
                         from: senderAddress
@@ -34,6 +35,35 @@
 
             watchStart();
         });
+
+        function changeKitty(){
+            let apiUrl = "https://api.cryptokitties.co/kitties/" + $("#kittyId").val();
+
+             $.getJSON(apiUrl, function(data){
+                let imgUrl = data.image_url_cdn
+                console.log(imgUrl);
+                $("#cryptoKitty").attr("src", imgUrl);
+
+                console.log($("#cryptoKitty"));
+            });
+        }
+
+        function eatKitty(){
+            let _zombieId = $("#zombieId").val();
+            let _kittyId = $("#kittyId").val();
+            console.log(BigNumber(web3.eth.getBalance(web3.eth.accounts[0])).toFixed());
+            ZombieFeeding.feedOnKitty.sendTransaction(
+                String(_zombieId),
+                String(_kittyId),
+                {
+                    from: senderAddress,
+                    gas: 3000000
+                },
+                function(error, result) {
+                    if (errorChk("feedOnKitty 호출 실패", error)) return;
+                }
+            );
+        }
 
         function generateZombie(id, name, dna){
             let dnaStr = String(dna);
@@ -56,14 +86,13 @@
 
         // Transaction에 의한 Event에 대한 Watch 부분
         function watchStart() {
-            var event = ZombieFactory.NewZombie(null, {fromBlock:0});
+            var event = ZombieFeeding.NewZombie(null, {fromBlock:0});
             event.watch(function(error, result){
                 if (error) return;
-                console.log(BigNumber(result.args.zombieId).toFixed());
                 let zombieDetails = generateZombie(BigNumber(result.args.zombieId).toFixed(), result.args.name, BigNumber(result.args.dna).toFixed());
-                console.log(zombieDetails);
-                writeLog("좀비 머리 : " + zombieDetails.headChoice + " / 좀비 눈 : " + zombieDetails.eyeChoice + 
-                         " / 좀비 옷 : " + zombieDetails.shirtChoice + " more... ");
+                writeLog("좀비 이름 : " + zombieDetails.zombieName + " / 좀비 머리 : " + zombieDetails.headChoice + 
+                         " / 좀비 눈 : " + zombieDetails.eyeChoice + " / 좀비 옷 : " + zombieDetails.shirtChoice + 
+                         " / 좀비 ID : "+BigNumber(result.args.zombieId).toFixed()+" more... ");
             });
         }
 
@@ -86,8 +115,13 @@
 </head>
 
 <body>
-    <input type="text" id="nameInput" />
+    좀비 생성 이름 : <input type="text" id="nameInput" />
     <button id="buttonClick" title="좀비생성">좀비생성</button><br/>
-    result : <div id="result" style="white-space: pre-wrap;"></div>
+    좀비 : <input type="text" id="zombieId" /> 
+    크립토키티 : <input type="text" id="kittyId" /> 
+        <button onclick="changeKitty();" title="크립토키티">크립토키티가져오기</button>
+        <button onclick="eatKitty();" title="크립토키티">크립토키티먹이기</button><br/>
+    <img id="cryptoKitty" width="400" height="300" src="../img/noimage.png"></img> <br/>
+    <result : <div id="result" style="white-space: pre-wrap;"></div>
 </body>
 </html>

@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/bignumber.js/bignumber.min.js"></script>
+    <title>My721Token Wallet</title>
+</head>
+<body>
+    <h1>My721Token Wallet</h1>
+    <div id="names">
+	    내 이름 : 
+	    <select id="sel_names" onchange="accountRefresh();"></select>
+    </div>
+    <div id="account">
+	    내 계정 : 
+	    <text id="current_account"></text>
+    </div>
+    <div id="balance">
+	    내 자산 : 
+	    <text id="current_balance"></text>
+    </div>
+    <div id="ether">
+	    보유 이더 : 
+	    <text id="current_ether"></text>
+    </div>
+    <h2>가스비</h2>
+    	<input type="string" id="gas_price"></input>
+    	gwei
+	<h2>내 토큰 리스트</h2>
+	<div id="my_tokens">
+	</div>
+    <h2>토큰 생성</h2>
+    <div id="mint">
+	    토큰 ID <input type="string" id="mint_token_id"></input>
+	    <button type="button" onClick="callMint();">생성하기</button>
+    </div><br/>
+    <h2>토큰 삭제</h2>
+    <div id="burn">
+	    토큰 ID <input type="string" id="burn_token_id"></input>
+	    <button type="button" onClick="callBurn();">삭제하기</button>
+    </div><br/>
+    <h2>전송하기</h2>
+    <div id="transfer">
+		<select id="sel_transfer_to_names"></select>
+		에게 ID 가 
+		<input type="string" id="transfer_value"></input>
+		인 토큰
+		<button type="button" onClick="callTransfer();">전송</button>
+    </div><br/>
+    <h2>오너십 주기</h2>
+	<div id="approve">
+		<select id="sel_approve_to_names"></select>
+		에게 ID 가 
+		<input type="string" id="approve_value"></input>
+		인 토큰의 
+		<button type="button" onClick="callApprove();">오너십 주기</button>
+    </div><br/>
+	<h2>내 모든 토큰의 오너십 주기</h2>
+	<div id="all_approve">
+		<select id="sel_all_approve_to_names"></select>
+		에게 모든 토큰의 
+		<button type="button" onClick="callAllApprove(true);">오너십 주기</button>		
+		<button type="button" onClick="callAllApprove(false);">오너십 뺐기</button>				
+	</div><br/>
+    <h2>이더 전송</h2>
+    <div id="eth_transfer">
+		<select id="sel_eth_transfer_to_names"></select>
+		에게 
+		<input type="string" id="eth_transfer_value"></input>
+		<select id="eth_transfer_unit">
+			<option value="1"> WEI </option>
+			<option value="1000"> 10^3 WEI </option>
+			<option value="1000000"> 10^6 WEI </option>
+			<option value="1000000000"> 10^9 WEI </option>
+			<option value="1000000000000"> 10^12 WEI </option>
+			<option value="1000000000000000"> 10^15 WEI </option>
+			<option value="1000000000000000000"> 10^18 WEI </option>
+		</select>
+		<button type="button" onClick="callEthTransfer();">전송</button>
+    </div><br/>
+    <h2>실행 결과</h2>
+    <div id="result" style="white-space: pre-wrap;"></div>	
+</body>
+<footer>
+    <script type="text/javascript">
+	    var baseBlock;
+	    
+	    var myToken;
+	    var myBalance;
+	    var accounts;
+	    var currentAccount;
+	    var logs = [];
+	    
+	    var selectorNames = document.getElementById("sel_names");
+	    var selectorTransferToNames = document.getElementById("sel_transfer_to_names");
+	    var selectorApproveToNames = document.getElementById("sel_approve_to_names");
+	    var selectorAllApproveToNames = document.getElementById("sel_all_approve_to_names");
+	    var selectorEthTransferToNames = document.getElementById("sel_eth_transfer_to_names");
+	    
+	    var accountNames= ['일지매', '이더리움', '삼겹살', '사피엔스', '오마이걸', '육룡이나르샤', '칠공주', '팔도비빔면', '구글', '십만양병설'];
+
+		const MyTokenABI= [
+			{
+				"constant": true,
+				"inputs": [
+					{
+						"name": "_interfaceId",
+						"type": "bytes4"
+					}
+				],
+				"name": "supportsInterface",
+				"outputs": [
+					{
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"payable": false,
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"constant": true,
+				"inputs": [],
+				"name": "name",
+				"outputs": [
+					{
+						"name": "",
+						"type": "string"
+					}
+				],
+				"payable": false,
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"constant": true,
+				"inputs": [
+					{
+						"name": "_tokenId",
+						"type": "uint256"
+					}
+				],
+				"name": "getApproved",
+				"outputs": [
+					{
+						"name": "",
+						"type": "address"
+					}
+				],
+				"payable": false,
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"constant": false,
+				"inputs": [
+					{
+						"name": "_to",
+						"type": "address"
+					},
+					{
+						"name": "_tokenId",
+						"type": "uint256"
+					}
+				],
+				"name": "approve",
+				"outputs": [],
+				"payable": false,
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"constant": false,
+				"inputs": [
+					{
+						"name": "tokenId",
+						"type": "uint256"
+					},
+					{
+						"name": "uri",
+						"type": "string"
+					}
+				],
+				"name": "setTokenURI",
+				"outputs": [],
+				"payable": false,
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"constant": true,
+				"inputs": [],
+				"name": "totalSupply",
+				"outputs": [
+					{
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"payable": false,
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"constant": true,
+				"inputs": [],
+				"name": "InterfaceId_ERC165",
+				"outputs": [
+					{
+						"name": "",
+						"type": "bytes4"
+					}
+				],
+				"payable": false,
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"constant": false,
+				"inputs": [
+					{
+						"name": "_from",
+						"type": "address"
+					},
+					{
+						"name": "_to",
+						"type": "address"
+					},
+					{
+						"name": "_tokenId",
+						"type": "uint256"
+					}
+				],
+				"name": "transferFrom",
+				"outputs": [],
+				"payable": false,
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"constant": true,
+				"inputs": [
+					{
+						"name": "_owner",
+						"type": "address"
+					},
+					{
+						"name": "_index",
+						"type": "uint256"
+					}
+				],
+				"name": "tokenOfOwnerByIndex",
+				"outputs": [
+					{
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"payable": false,
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"constant": false,
+				"inputs": [
+					{
+						"name": "_from",
+						"type": "address"
+					},
+					{
+						"name": "_to",
+						"type": "address"
+					},
+					{
+						"name": "_tokenId",
+						"type": "uint256"
+					}
+				],
+				"name": "safeTransferFrom",
+				"outputs": [],
+				"payable": false,
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"constant": false,
+				"inputs": [
+					{
+						"name": "tokenId",
+						"type": "uint256"
+					}
+				],
+				"name": "burn",
+				"outputs": [],
+				"payable": false,
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"constant": true,
+				"inputs": [
+					{
+						"name": "_tokenId",
+						"type": "uint256"
+					}
+				],
+				"name": "exists",
+				"outputs": [
+					{
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"payable": false,
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"constant": true,
+				"inputs": [
+					{
+						"name": "_index",
+						"type": "uint256"
+					}
+				],
+				"name": "tokenByIndex",
+				"outputs": [
+					{
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"payable": false,
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"constant": true,
+				"inputs": [
+					{
+						"name": "_tokenId",
+						"type": "uint256"
+					}
+				],
+				"name": "ownerOf",
+				"outputs": [
+					{
+						"name": "",
+						"type": "address"
+					}
+				],
+				"payable": false,
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"constant": true,
+				"inputs": [
+					{
+						"name": "_owner",
+						"type": "address"
+					}
+				],
+				"name": "balanceOf",
+				"outputs": [
+					{
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"payable": false,
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"constant": false,
+				"inputs": [],
+				"name": "renounceOwnership",
+				"outputs": [],
+				"payable": false,
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"constant": true,
+				"inputs": [],
+				"name": "owner",
+				"outputs": [
+					{
+						"name": "",
+						"type": "address"
+					}
+				],
+				"payable": false,
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"constant": true,
+				"inputs": [],
+				"name": "symbol",
+				"outputs": [
+					{
+						"name": "",
+						"type": "string"
+					}
+				],
+				"payable": false,
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"constant": false,
+				"inputs": [
+					{
+						"name": "tokenId",
+						"type": "uint256"
+					}
+				],
+				"name": "mint",
+				"outputs": [],
+				"payable": false,
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"constant": false,
+				"inputs": [
+					{
+						"name": "_to",
+						"type": "address"
+					},
+					{
+						"name": "_approved",
+						"type": "bool"
+					}
+				],
+				"name": "setApprovalForAll",
+				"outputs": [],
+				"payable": false,
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"constant": false,
+				"inputs": [
+					{
+						"name": "_from",
+						"type": "address"
+					},
+					{
+						"name": "_to",
+						"type": "address"
+					},
+					{
+						"name": "_tokenId",
+						"type": "uint256"
+					},
+					{
+						"name": "_data",
+						"type": "bytes"
+					}
+				],
+				"name": "safeTransferFrom",
+				"outputs": [],
+				"payable": false,
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"constant": true,
+				"inputs": [
+					{
+						"name": "_tokenId",
+						"type": "uint256"
+					}
+				],
+				"name": "tokenURI",
+				"outputs": [
+					{
+						"name": "",
+						"type": "string"
+					}
+				],
+				"payable": false,
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"constant": true,
+				"inputs": [
+					{
+						"name": "_owner",
+						"type": "address"
+					},
+					{
+						"name": "_operator",
+						"type": "address"
+					}
+				],
+				"name": "isApprovedForAll",
+				"outputs": [
+					{
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"payable": false,
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"constant": false,
+				"inputs": [
+					{
+						"name": "newOwner",
+						"type": "address"
+					}
+				],
+				"name": "transferOwnership",
+				"outputs": [],
+				"payable": false,
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"payable": false,
+				"stateMutability": "nonpayable",
+				"type": "constructor"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"name": "previousOwner",
+						"type": "address"
+					}
+				],
+				"name": "OwnershipRenounced",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"name": "previousOwner",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"name": "newOwner",
+						"type": "address"
+					}
+				],
+				"name": "OwnershipTransferred",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"name": "_from",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"name": "_to",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"name": "_tokenId",
+						"type": "uint256"
+					}
+				],
+				"name": "Transfer",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"name": "_owner",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"name": "_approved",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"name": "_tokenId",
+						"type": "uint256"
+					}
+				],
+				"name": "Approval",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"name": "_owner",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"name": "_operator",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"name": "_approved",
+						"type": "bool"
+					}
+				],
+				"name": "ApprovalForAll",
+				"type": "event"
+			}
+		];
+		
+		function writeLog(msg, i) {
+			if (i === undefined)
+				i = currentAccount;
+			if (logs[i] === undefined)
+				logs[i] = "";
+				
+			logs[i] = logs[i] + "[" + new Date().toLocaleString() + "] " + msg + "\n";
+
+			if (i == currentAccount)
+				document.getElementById("result").textContent = logs[i];
+		}
+		
+		function errorChk(msg, error) {
+			if (error != null) {
+				writeLog(msg + " : " + error.toString());
+				return true;
+			} else {
+				return false;
+			}
+		}
+		  
+		function watchStart() {
+			var eventTransfer = myToken.Transfer(null, {fromBlock:baseBlock});
+			eventTransfer.watch(function(error, result) {
+				if (result.blockNumber == baseBlock || errorChk("Transfer 이벤트 Watch 실패", error)) return;
+				
+				for (var i = 0; i < accounts.length; i++) {
+					if (result.args._from == accounts[i])
+						var whoFrom = i;
+					if (result.args._to == accounts[i])
+						var whoTo = i;
+				}
+				
+				if (result.args._from == 0) {
+					writeLog(accountNames[whoTo] + " 에게 ID 가 " + result.args._tokenId + " 인 새로운 토큰 발급 완료", whoFrom);	
+				} else if (result.args._to == 0) {
+					writeLog(accountNames[whoFrom] + " 의 ID 가 " + result.args._tokenId + " 인 토큰의 소멸 완료", whoTo);	
+				} else {
+					writeLog(accountNames[whoTo] + " 에게 ID 가 " + result.args._tokenId + " 인 토큰 전송 완료", whoFrom);
+					writeLog(accountNames[whoFrom] + " 으로부터 ID 가 " + result.args._tokenId + " 인 토큰 전송 받음", whoTo);
+				}
+
+				if (whoFrom == currentAccount || whoTo == currentAccount)
+					accountRefresh();
+			});
+			
+			
+			var eventApprove = myToken.Approval(null, {fromBlock:baseBlock});
+			eventApprove.watch(function(error, result) {
+				if (result.blockNumber == baseBlock || errorChk("Approval 이벤트 Watch 실패", error)) return;
+				
+				for (var i = 0; i < accounts.length; i++) {
+					if (result.args._owner == accounts[i])
+						var whoFrom = i;
+					if (result.args._approved == accounts[i])
+						var whoTo = i;
+				}
+				
+				if (result.args._approved == 0) {
+					writeLog("ID 가 " + result.args._tokenId + " 인 토큰의 제3자 접근 권한 소멸", whoFrom);	
+				} else {
+					writeLog(accountNames[whoTo] + " 에게 ID 가 " + result.args._tokenId + " 인 토큰의 권한 부여 완료", whoFrom);
+					writeLog(accountNames[whoFrom] + " 으로부터 ID 가 " + result.args._tokenId + " 인 토큰의 권한 부여 받음", whoTo);
+				}
+				
+				if (whoFrom == currentAccount || whoTo == currentAccount)
+					accountRefresh();
+			});
+			
+			
+			var eventApprove = myToken.ApprovalForAll(null, {fromBlock:baseBlock});
+			eventApprove.watch(function(error, result) {
+				if (result.blockNumber == baseBlock || errorChk("Approval 이벤트 Watch 실패", error)) return;
+				
+				for (var i = 0; i < accounts.length; i++) {
+					if (result.args._owner == accounts[i])
+						var whoFrom = i;
+					if (result.args._operator == accounts[i])
+						var whoTo = i;
+				}
+				
+				if (result.args._operator == 0) {
+					writeLog("한번에 모든 접근할 수 있었던 제3자 권한 소멸", whoFrom);	
+				} else {
+					var approveFromString;
+					var approveToString;
+					if (result.args._approved) {
+						approveFromString = "주기";
+						approveToString = "받음";
+					} else {
+						approveFromString = "뺐기";
+						approveToString = "뺐김";						
+					}
+				
+					writeLog(accountNames[whoTo] + " 에게 모든 토큰의 접근 권한 " + approveFromString + " 완료", whoFrom);
+					writeLog(accountNames[whoFrom] + " 모든 토큰의 접근 권한 " + approveToString, whoTo);
+				}
+				
+				if (whoFrom == currentAccount || whoTo == currentAccount)
+					accountRefresh();
+			});
+		}
+		
+		function accountRefresh() {
+			if (accounts == null)
+				return;
+				
+			currentAccount = document.getElementById('sel_names').value;
+			if (currentAccount < accounts.length) {
+				document.getElementById("current_account").textContent = accounts[currentAccount];
+				
+				myToken.balanceOf(accounts[currentAccount], function(error, result) {
+					if (errorChk("balanceOf 호출 실패", error)) {
+						myBalance = 0;
+						return;
+					}
+					
+					myBalance = result;
+					myToken.symbol(function(error, result) {
+						var mySymbol = result;
+						document.getElementById("current_balance").textContent = myBalance.toFixed() + " " + mySymbol;
+					});
+					
+					$("#my_tokens").empty();
+					for (i= 0; i < myBalance; i++) {
+						myToken.tokenByIndex(i, function(error, result) {
+							if (errorChk("tokenByIndex 호출 실패", error)) return;
+							$("#my_tokens").append("Token ID : " + result + "<br/>");
+						});
+					}
+				});	
+				
+				web3js.eth.getBalance(accounts[currentAccount], function(error, result) {
+					if (errorChk("getBalance 호출 실패", error)) return;
+					
+					var myEther = BigNumber(result);
+					if (myEther.isLessThan(1000000000000000))
+						var etherMessage = " (경고 : 이더 부족으로 실행하지 못할 수도 있습니다.)"
+					else
+						etherMessage = "";
+					document.getElementById("current_ether").textContent = myEther.toFixed() + " wei" + etherMessage;
+				});
+				
+				document.getElementById("result").textContent = logs[currentAccount];					
+			} else {
+				document.getElementById("current_account").textContent = "계정 number 초과 ERROR : " + accounts.length + " 번째 이하의 계정을 골라주세요.";
+			}		
+		}
+		
+		function callMint() {
+			var tokenId = document.getElementById('mint_token_id').value;
+			if (!tokenId) {
+				writeLog("토큰 ID를 입력해주세요.");
+				return;
+			}
+			if (isNaN(tokenId)) {
+				writeLog("토큰 ID는 숫자로 입력해주세요.");
+				return;
+			}
+				
+			myToken.mint.call(tokenId, {from:accounts[currentAccount]}, function(error, result) {
+				if (errorChk("mint(call) 호출 실패", error)) return;
+				if (result) {
+					myToken.mint.sendTransaction(
+						tokenId,
+						{
+							from:accounts[currentAccount], 
+							gasPrice:BigNumber(document.getElementById("gas_price").value).multipliedBy(1000000000)
+						}, 
+						function(error, result) {
+							if (errorChk("mint(transaction) 호출 실패", error)) return;
+							writeLog("ID 가 " + tokenId + " 인 토큰 생성 : (return data) " + result);
+						}
+					);
+				}
+			});
+		}
+		
+		function callBurn() {
+			var tokenId = document.getElementById('burn_token_id').value;
+			if (!tokenId) {
+				writeLog("토큰 ID를 입력해주세요.");
+				return;
+			}
+			if (isNaN(tokenId)) {
+				writeLog("토큰 ID는 숫자로 입력해주세요.");
+				return;
+			}
+				
+			myToken.burn.call(tokenId, {from:accounts[currentAccount]}, function(error, result) {
+				if (errorChk("burn(call) 호출 실패", error)) return;
+				if (result) {
+					myToken.burn.sendTransaction(
+						tokenId,
+						{
+							from:accounts[currentAccount], 
+							gasPrice:BigNumber(document.getElementById("gas_price").value).multipliedBy(1000000000)
+						}, 
+						function(error, result) {
+							if (errorChk("burn(transaction) 호출 실패", error)) return;
+							writeLog("ID 가 " + tokenId + " 인 토큰 삭제 : (return data) " + result);
+						}
+					);
+				}
+			});
+		}
+		
+		function callTransfer() {
+			var i = document.getElementById('sel_transfer_to_names').value;
+			if (i < accounts.length) {
+				if (i == currentAccount) {
+					writeLog(accountNames[i] + " 에게 토큰 전송 : 본인에게 전송하는 것은 의미가 없습니다.");
+					return;
+				}
+				
+				var transferValue = BigNumber(document.getElementById("transfer_value").value);
+				
+				if (transferValue.isLessThan(0)) {
+					writeLog(accountNames[i] + " 에게 토큰 전송 : 토큰 ID 는 0 이상의 값을 입력해주세요.");
+					return;
+				}
+				
+				myToken.exists(transferValue.toFixed(), function(error, result) {
+					if (errorChk("exists 호출 실패", error)) return;
+					if (result == false) { 
+						writeLog("존재하지 않는 토큰입니다."); 
+						return; 
+					}
+											
+					myToken.ownerOf(transferValue.toFixed(), function(error, result) {
+						if (errorChk("ownerOf 호출 실패", error)) return;
+						var fromAccount = result;
+						
+						// 본인 소유이거나 토큰의 오너십의 있거나 전체 오너십이 있거나에 대한 예외처리가 이 부분에 들어가야 하나, 코드가 복잡해져서 생략함
+						
+						myToken.safeTransferFrom.call(fromAccount, accounts[i], transferValue.toFixed(), {from:accounts[currentAccount]}, function(error, result) {
+							if (errorChk("safeTransferFrom(call) 호출 실패", error)) return;
+							if (result) {
+								myToken.safeTransferFrom.sendTransaction(
+									fromAccount, 
+									accounts[i], 
+									transferValue.toFixed(), 
+									{
+										from:accounts[currentAccount], 
+										gasPrice:BigNumber(document.getElementById("gas_price").value).multipliedBy(1000000000)
+									}, 
+									function(error, result) {
+										if (errorChk("safeTransferFrom(transaction) 호출 실패", error)) return;
+										writeLog(accountNames[i] + " 에게 ID 가 " + transferValue + " 인 토큰 전송 : (return data) " + result);
+									}
+								);
+							}
+						});						
+					});
+				});
+
+
+
+			} else {
+				writeLog(accountNames[i] + " 에게 토큰 전송 : 계정 number 초과 ERROR! " + accounts.length + " 번째 이하의 계정을 골라주세요.");
+			}
+		}
+		
+		function callApprove() {
+			var i = document.getElementById('sel_approve_to_names').value;
+			if (i < accounts.length) {
+				if (i == currentAccount) {
+					writeLog(accountNames[i] + " 에게 토큰 오너십 주기 : 본인에게 권한을 주는 것은 의미가 없습니다.");
+					return;
+				}
+				
+				var approveValue = BigNumber(document.getElementById("approve_value").value);
+				if (approveValue.isLessThan(0)) {
+					writeLog(accountNames[i] + " 에게 토큰 오너십 주기 : 토큰 ID 는 0 이상의 값을 입력해주세요.");
+					return;
+				}
+				
+				myToken.exists(approveValue.toFixed(), function(error, result) {
+					if (errorChk("exists 호출 실패", error)) return;
+					if (result == false) { 
+						writeLog("존재하지 않는 토큰입니다."); 
+						return; 
+					}
+					
+					myToken.approve.call(accounts[i], approveValue.toFixed(), {from:accounts[currentAccount]}, function(error, result) {
+						if (errorChk("approve(call) 호출 실패", error)) return;
+						if (result) {
+							myToken.approve.sendTransaction(
+								accounts[i], 
+								approveValue.toFixed(), 
+								{ 
+									from:accounts[currentAccount], 
+									gasPrice:BigNumber(document.getElementById("gas_price").value).multipliedBy(1000000000)
+								}, 
+								function(error, result) {
+									if (errorChk("approve(transaction) 호출 실패", error)) return;
+									writeLog(accountNames[i] + " 에게 ID 가 " + approveValue + " 인 토큰의 오너십 주기 : (return data) " + result);
+								}
+							);
+						}
+					});
+				});
+			} else {
+				writeLog(accountNames[i] + " 에게 토큰 오너십 권한 주기 : 계정 number 초과 ERROR! " + accounts.length + " 번째 이하의 계정을 골라주세요.");
+			}
+		}
+		
+		function callAllApprove(approveValue) {
+			var approveString;
+			if (approveValue == "true")
+				approveString = "주기";
+			else
+				approveString = "뺐기";
+				
+			var i = document.getElementById('sel_all_approve_to_names').value;
+			if (i < accounts.length) {
+				if (i == currentAccount) {
+					writeLog(accountNames[i] + " 에게 모든 토큰의 오너십 " + approveString + " : 본인에게 권한을 주는 것은 의미가 없습니다.");
+					return;
+				}
+					
+				myToken.setApprovalForAll.call(accounts[i], approveValue, {from:accounts[currentAccount]}, function(error, result) {
+					if (errorChk("setApprovalForAll(call) 호출 실패", error)) return;
+					if (result) {
+						myToken.setApprovalForAll.sendTransaction(
+							accounts[i], 
+							approveValue,
+							{ 
+								from:accounts[currentAccount], 
+								gasPrice:BigNumber(document.getElementById("gas_price").value).multipliedBy(1000000000)
+							}, 
+							function(error, result) {
+								if (errorChk("setApprovalForAll(transaction) 호출 실패", error)) return;
+								writeLog(accountNames[i] + " 에게 모든 토큰의 오너십 " + approveString + " : (return data) " + result);
+							}
+						);
+					}
+				});
+			} else {
+				writeLog(accountNames[i] + " 에게 모든 토큰의 오너십 권한 " + approveString + " : 계정 number 초과 ERROR! " + accounts.length + " 번째 이하의 계정을 골라주세요.");
+			}
+		}
+		
+		
+		function callEthTransfer() {
+			var i = document.getElementById('sel_eth_transfer_to_names').value;
+			if (i < accounts.length) {
+				if (i == currentAccount) {
+					writeLog(accountNames[i] + " 에게 ETH 전송 : 본인에게 전송하는 것은 의미가 없습니다.");
+					return;
+				}
+				
+				var transferValue = BigNumber(document.getElementById("eth_transfer_value").value);
+				if (transferValue.isLessThan(0)) {
+					writeLog(accountNames[i] + " 에게 ETH 전송 : 0 이상의 값을 입력해주세요.");
+					return;
+				}
+
+				transferValue = transferValue.multipliedBy(document.getElementById("eth_transfer_unit").value);
+				web3js.eth.call({from:accounts[currentAccount], to:accounts[i], value: transferValue.toFixed()}, function(error, result) {
+					if (errorChk("이더 transfer(call) 호출 실패", error)) return;
+					if (result) {
+						web3js.eth.sendTransaction(
+							{
+								from:accounts[currentAccount], 
+								to:accounts[i], 
+								value: transferValue.toFixed(), 
+								gasPrice:BigNumber(document.getElementById("gas_price").value).multipliedBy(1000000000)
+							},
+							function(error, result) {
+								if (errorChk("이더 transfer(transaction) 호출 실패", error)) return;
+								writeLog(accountNames[i] + " 에게 ETH 전송 : (return data) " + result);
+							}
+						);
+					}
+				});
+			} else {
+				writeLog(accountNames[i] + " 에게 ETH 전송 : 계정 number 초과 ERROR! " + accounts.length + " 번째 이하의 계정을 골라주세요.");
+			}
+		}
+		
+	    window.addEventListener('load', function() {
+/*
+			if (typeof window.web3 !== "undefined") {
+				web3js = new Web3(window.web3.currentProvider);
+				console.log("Connect to Mist/MetaMask");
+			} else {		   
+*/
+				web3js = new Web3(new Web3.providers.HttpProvider("http://localhost:8555"));
+				console.log("Connect to Localhost");
+//  			}
+			
+			web3js.eth.getBlockNumber(function(error, result) {
+				if (error != null) {
+					document.getElementById("current_account").textContent = "접속 ERROR : 블록 정보를 가져올 수 없습니다.";
+					baseBlock = -1;
+					accounts = null;
+				}
+				else {
+					baseBlock = result;
+					web3js.eth.getAccounts(function(error, result) {
+						if (error != null) {
+							document.getElementById("current_account").textContent = "접속 ERROR : 계정 정보를 가져올 수 없습니다.";
+							accounts = null;							
+						} else {
+							accounts = result;
+							myToken = web3js.eth.contract(MyTokenABI).at("0x63ef2e522e7428b52a3234b399ff8e4fa0c3e112");
+							
+							var len= (accounts.length > accountNames.length) ? accountNames.length : accounts.length;							
+						    for (var i = 0; i < len; i++) {
+							    var option = document.createElement("option");
+							    option.setAttribute("value", i);
+							    option.text = accountNames[i];
+							    selectorNames.appendChild(option);
+							    
+							    option = document.createElement("option");
+							    option.setAttribute("value", i);
+							    option.text = accountNames[i];
+							    selectorTransferToNames.appendChild(option);
+							    
+							    option = document.createElement("option");
+							    option.setAttribute("value", i);
+							    option.text = accountNames[i];
+							    selectorApproveToNames.appendChild(option);
+							    
+							    option = document.createElement("option");
+							    option.setAttribute("value", i);
+							    option.text = accountNames[i];
+							    selectorAllApproveToNames.appendChild(option);
+							    
+							    option = document.createElement("option");
+							    option.setAttribute("value", i);
+							    option.text = accountNames[i];
+							    selectorEthTransferToNames.appendChild(option);
+							}
+							
+							accountRefresh();
+							watchStart();
+							
+							$.getJSON('https://ethgasstation.info/json/ethgasAPI.json', function(data) {
+				    			document.getElementById("gas_price").value=data['safeLow'] / 10;
+							});
+							
+							document.getElementById("transfer_value").value = 0;
+							document.getElementById("approve_value").value = 0;
+							document.getElementById("eth_transfer_value").value = 0;
+						}
+					});				
+				}
+			});		    
+		});
+    </script>
+</footer>
+</html>
