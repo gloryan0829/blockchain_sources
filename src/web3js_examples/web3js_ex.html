@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    	<meta charset="UTF-8">
+        <title>web3js활용</title>
+                <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.js"></script>
+                <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/bignumber.js/bignumber.min.js"></script>
+        		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        		<style>
+        			body {
+        				font-size:14px;
+        			}
+        		</style>
+        		<script>
+        			const HelloWorldABI = [{"constant":false,"inputs":[{"name":"_name","type":"string"}],"name":"whatisYourName","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"sayYourName","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_greeting","type":"string"}],"name":"setGreeting","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"sayHello","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"greeting","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"}];
+
+					const HelloWorldAddr = "0x0d8cc4b8d15d4c3ef1d70af0071376fb26b5669b";
+        			let web3, webLoginTest, helloWorldContract, accounts;
+
+        			console.log(web3);
+         			
+         			// if (typeof web3 !== 'undefined') {
+					//   web3 = new Web3(web3.currentProvider); //Meta Mask 접속 시
+					// } else {
+					// set the provider you want from Web3.providers
+					  	 web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:9545"));
+
+						 console.log("web3js api version >> ", web3.version.api); // web3js api version
+						 console.log("Node Version >> ", web3.version.node); // Geth // Mist // Parity Node Version
+						 console.log("network protocol version", web3.version.network);
+					// }
+
+
+
+					webLoginTest = new Web3(new Web3.providers.HttpProvider("http://localhost:9545", 0, "test1", "test1"));
+
+					console.log(webLoginTest);
+					
+					$(document).ready(()=>{
+
+						//HelloWorld 불러오기
+						helloWorldContract = web3.eth.contract(HelloWorldABI).at(HelloWorldAddr);
+
+						// 블록 정보에 대한 receipt...
+						getBlock(1).then((data)=>{ console.log("블록정보 >> ", data) });
+
+						// Bignumber 처리...
+						console.log("일반적인 숫자 처리 >> ", 101010100324325345346456456456456456456); // 일반적인 숫자 처리
+						console.log("Bignumber 숫자 처리 >> ", new BigNumber('101010100324325345346456456456456456456').toFixed()); // BigNumber 숫자 처리
+						console.log("Bignumber 연산 >> ", new BigNumber('101010100324325345346456456456456456456').plus(21).toFixed()); // BigNumber 숫자 처리
+
+						console.log("노드와의 커넥션 상태 >> ", web3.net.listening);
+						console.log("노드와 연결된 Peer 수 >> ", web3.net.peerCount);
+
+						console.log("마이닝 상태 >> ", web3.eth.mining);
+						console.log("해시레이트 >> ", web3.eth.hashrate);
+
+						console.log("노드의 이더 계정들 ", web3.eth.accounts);
+
+						accounts = web3.eth.accounts;
+
+						getAccounts().then((arr) => { console.log("노드의 이더 계정들 (Async 버전) ", arr) });
+
+
+						$("#sendEther").click(() => {
+							
+							let ether = getToWeiUnit($("#etherValue").val(),"ether");
+							let from = $("#fromAddr").val();
+							let to = $("#toAddr").val();
+
+							sendEther(from, to, ether).then((data) => { console.log("전송 처리 완료 >> ", data) } );
+						});
+
+						$("#balanceBtn").click(() => {
+							let addr = $("#balanceOfAddr").val();
+
+							if(!web3.isAddress( addr )) {
+								alert("계좌주소가 유효하지 않습니다.");
+								return;
+							}
+
+							getBalance(addr).then((balance) => { console.log("잔고 >> ", getFromWeiUnit( new BigNumber(balance).toFixed(), "ether" )) });
+						});
+
+						$("#txInfoBtn").click(() => {
+							let tx = $("#txInfo").val();
+
+							console.log( "web3.eth.getTransaction >> ", web3.eth.getTransaction(tx) );
+							console.log( "web3.eth.getTransactionReceipt >> ", web3.eth.getTransactionReceipt(tx) );
+						});
+
+						$("#blockInfoBtn").click(() => {
+							let idx = $("#txInfo2").val();
+
+							console.log( "web3.eth.getTransactionFromBlock >> ", web3.eth.getTransactionFromBlock("latest", idx) );
+						});
+
+						$("#callFuncName").change(() => {
+							let callFuncName = $("#callFuncName").val();
+							console.log( "HelloWorld Contract [" + callFuncName + "] Call >> ", helloCall(callFuncName));
+						});
+
+						$("#txExec").click(() => {
+							let txFunc = $("#txFuncName").val() === "setGreeting" ? helloWorldContract.setGreeting : helloWorldContract.whatisYourName;
+							let helloWorldVal = $("#helloWorldVal").val();
+							
+							txFunc.sendTransaction(
+								helloWorldVal, 
+								{
+									from: accounts[0], 
+									gasPrice: 1000000000
+								}, 
+								function(error, result) {
+									if(!error) console.log("처리 완료 >> ", result );
+									else console.log(error);
+								}
+							);
+
+						});
+
+					});
+
+					//0x3a64b0ee57f5d4b744ef92acf8dbc12ab1a4aa24f6d508ac5fa15a25cdefd977
+					function sendEther(_from, _to, _value) {
+						return new Promise((ok, fail) => {
+							web3.eth.sendTransaction({
+							       from: _from,
+							       to: _to,
+							       value: _value,
+							       gasPrice : 5000000000
+							}, (error, result) => {
+								console.log(result);
+								if(!error) ok(result);
+								else fail(error);
+							});
+						});		
+					}
+
+					function getBalance(addr) {
+						return new Promise((ok, fail) => {
+							web3.eth.getBalance(addr, web3.eth.defaultBlock, (error, result) => {
+								if(!error) ok(result);
+								else fail(error);
+							})
+						});
+					}
+
+					function getAccounts() {
+						return new Promise((ok, fail) => {
+							web3.eth.getAccounts((error, result) => {
+								if(!error){
+									ok(result);
+								}else{
+									fail(error);
+								}
+							});
+						});
+					}
+
+					function getBlock(_blockNum){
+						return new Promise((ok, fail)=>{
+							web3.eth.getBlock(_blockNum, (error, result) => {
+								if(!error) ok(result);
+								else console.error(error);
+							});
+						});
+					}
+
+					function getHash(){
+						$("#afterHash").text( web3.sha3($("#beforeHash").val()) );
+					}
+
+					function getFromWeiUnit(_wei, _unit){
+						let wei = _wei || $("#beforeWei").val();
+						let unit = _unit || $("#weiUnit").val();
+
+						if(_wei) return web3.fromWei(wei, unit);
+						else $("#convertUnit").text( web3.fromWei(wei, unit) );
+					}
+
+					function getToWeiUnit(_wei, _unit){
+						let wei = _wei || $("#beforeWei").val();
+						let unit = _unit || $("#weiUnit").val();
+
+						if(_wei) return web3.toWei(wei, unit);
+						else $("#convertUnit").text( web3.fromWei(wei, unit) );
+					}
+
+					function isValidAddress(){
+						$("#resultIsAddress").text( web3.isAddress( $("#address").val() ) );
+					}
+
+					function helloCall(callFuncName){
+						switch (callFuncName) {
+							case "greeting" :
+								return helloWorldContract.greeting();
+							case "sayHello" :
+								return helloWorldContract.sayHello();
+							case "sayYourName" :
+								return helloWorldContract.sayYourName();
+							default :
+								return helloWorldContract.greeting();
+						}
+					}
+
+        		</script>
+        </script>
+    </head>
+    <body>
+    	<h2>Web3js API 예제 구현</h2>
+    	SHA256 변환할 값 : <input type="string" id="beforeHash"> => <span id="afterHash">Empty</span> <button onclick="getHash();">변환하기</button><br/>
+	    Wei 변환 : <input type="string" id="beforeWei">
+	    		  <select id="weiUnit">
+	    		  	<option value="Gwei">Gwei</option>
+	    		  	<option value="ether">ether</option>
+	    		  	<option value="finney">finney</option>
+	    		  	<option value="szabo">szabo</option>
+	    		  	<option value="mwei">mwei</option>
+	    		  </select>
+	    			 => 
+	    		  <span id="convertUnit"></span> 
+	    		  	<button onclick="getFromWeiUnit();">fromWei 변환하기</button>
+	    		  	<button onclick="getToWeiUnit();">toWei 변환하기</button><br/>
+		Address 체크 : <input type="string" id="address"> => Result : <span id="resultIsAddress"></span> <button onclick="isValidAddress();">Address </button><br/>
+		이더 송금 : <input type="string" id="fromAddr"> 가 <input type="string" id="toAddr"> 에게 <input type="string" id="etherValue"> 이더를 <button id="sendEther">전송</button><br/> 	    
+		잔고확인 : <input type="string" id="balanceOfAddr"> <button id="balanceBtn" >잔고확인</button><br/>
+		트랜잭션 : <input type="string" id="txInfo"> <button id="txInfoBtn">Tx정보보기</button><br/>  
+		최신블록의 트랜잭션 <input type="string" id="txInfo2"> <button id="blockInfoBtn">블록의 트랜잭션정보 보기</button><br/<br/>
+		<h2>HelloWorld SmartContract with Web3js</h2>
+			Getter 호출 함수 :  <select id="callFuncName">
+	    		  		<option value="greeting">greeting</option>
+		    		  	<option value="sayHello">sayHello</option>
+		    		  	<option value="sayYourName">sayYourName</option>
+	    			  </select><br/>
+	    	트랜잭션 호출 함수 : <input type="string" id="helloWorldVal">
+	    			  <select id="txFuncName">
+	    		  		<option value="setGreeting">setGreeting</option>
+		    		  	<option value="whatisYourName">whatisYourName</option>
+	    			  </select> <button id="txExec">실행</button><br/>
+    </body>
+</html>
