@@ -14,7 +14,7 @@
         		<script>
         			const HelloWorldABI = [{"constant":false,"inputs":[{"name":"_name","type":"string"}],"name":"whatisYourName","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"sayYourName","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_greeting","type":"string"}],"name":"setGreeting","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"sayHello","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"greeting","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"}];
 
-					const HelloWorldAddr = "0x0d8cc4b8d15d4c3ef1d70af0071376fb26b5669b";
+					const HelloWorldAddr = "0x13274fe19c0178208bcbee397af8167a7be27f6f";
         			let web3, webLoginTest, helloWorldContract, accounts;
 
         			console.log(web3);
@@ -32,9 +32,9 @@
 
 
 
-					webLoginTest = new Web3(new Web3.providers.HttpProvider("http://localhost:9545", 0, "test1", "test1"));
+					// webLoginTest = new Web3(new Web3.providers.HttpProvider("http://localhost:9545", 0, "test1", "test1"));
 
-					console.log(webLoginTest);
+					// console.log(webLoginTest);
 					
 					$(document).ready(()=>{
 
@@ -42,7 +42,7 @@
 						helloWorldContract = web3.eth.contract(HelloWorldABI).at(HelloWorldAddr);
 
 						// 블록 정보에 대한 receipt...
-						getBlock(1).then((data)=>{ console.log("블록정보 >> ", data) });
+						getBlock(2).then((data)=>{ console.log("블록정보 >> ", data) });
 
 						// Bignumber 처리...
 						console.log("일반적인 숫자 처리 >> ", 101010100324325345346456456456456456456); // 일반적인 숫자 처리
@@ -183,7 +183,7 @@
 						let unit = _unit || $("#weiUnit").val();
 
 						if(_wei) return web3.toWei(wei, unit);
-						else $("#convertUnit").text( web3.fromWei(wei, unit) );
+						else $("#convertUnit").text( web3.toWei(wei, unit) );
 					}
 
 					function isValidAddress(){
