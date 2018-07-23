@@ -99,7 +99,7 @@
 	    var selectorAllApproveToNames = document.getElementById("sel_all_approve_to_names");
 	    var selectorEthTransferToNames = document.getElementById("sel_eth_transfer_to_names");
 	    
-	    var accountNames= ['일지매', '이더리움', '삼겹살', '사피엔스', '오마이걸', '육룡이나르샤', '칠공주', '팔도비빔면', '구글', '십만양병설'];
+	    var accountNames= ['이정주', '이더리움', '삼겹살', '사피엔스', '오마이걸', '육룡이나르샤', '칠공주', '팔도비빔면', '구글', '십만양병설'];
 
 		const MyTokenABI= [
 			{
@@ -1017,7 +1017,7 @@
 				console.log("Connect to Mist/MetaMask");
 			} else {		   
 */
-				web3js = new Web3(new Web3.providers.HttpProvider("http://localhost:8555"));
+				web3js = new Web3(new Web3.providers.HttpProvider("http://localhost:9545"));
 				console.log("Connect to Localhost");
 //  			}
 			
@@ -1035,7 +1035,7 @@
 							accounts = null;							
 						} else {
 							accounts = result;
-							myToken = web3js.eth.contract(MyTokenABI).at("0x63ef2e522e7428b52a3234b399ff8e4fa0c3e112");
+							myToken = web3js.eth.contract(MyTokenABI).at("0xeec918d74c746167564401103096d45bbd494b74");
 							
 							var len= (accounts.length > accountNames.length) ? accountNames.length : accounts.length;							
 						    for (var i = 0; i < len; i++) {
