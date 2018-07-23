@@ -1,4 +1,4 @@
-# 블록체인 소스들 by LJJ
+# 블록체인 기반 스마트 컨트랙트 강의 소스
 
 ## src > 스마트 컨트랙트나 기타 프로젝트 소스들
       ### contract > 컨트랙트 소스 
@@ -13,4 +13,4 @@
       ### truffle > truffle framework 소스
       ### web3js_examples > web3js 라이브러리 활용 예제 소스 (Simple NodeJS+Express)
       ### workspace
-#### docs > 강의 자료들
+#### docs > 강의 자료
