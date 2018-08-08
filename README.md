@@ -8,6 +8,7 @@
       	   ## > ethernaut 이더너트 관련 예제 소스들
       	   ## > syntax 솔리디티 문법과 기초 예제 소스들
       	   ## > token 크라우드 세일과 토큰 소스
+               ## > blockchain_exchange 분산거래소 소스들
       ### geth-config > genensis 블록 설정 파일
       ### parity-config > parity 노드 Test 환경 설정 Config
       ### truffle > truffle framework 소스
